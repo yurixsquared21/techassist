@@ -50,19 +50,43 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+    
       const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split('T')[0];
+    
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        .toISOString()
+        .split('T')[0];
+    
       const [clientsRes, ordersRes, cashRes, recentRes] = await Promise.all([
-        supabase.from('clients').select('id', { count: 'exact', head: true }),
-        supabase.from('service_orders').select('status'),
-        supabase.from('cash_flow_entries').select('type, amount').gte('entry_date', monthStart).lte('entry_date', monthEnd),
-        supabase.from('service_orders')
+        supabase
+          .from('clients')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+    
+        supabase
+          .from('service_orders')
+          .select('status')
+          .eq('user_id', user.id),
+    
+        supabase
+          .from('cash_flow_entries')
+          .select('type, amount')
+          .eq('user_id', user.id)
+          .gte('entry_date', monthStart)
+          .lte('entry_date', monthEnd),
+    
+        supabase
+          .from('service_orders')
           .select('id, order_number, device_type, status, priority, created_at, client:clients(name)')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(6),
       ]);
+    }
 
       const orders = ordersRes.data ?? [];
       const cash = cashRes.data ?? [];
