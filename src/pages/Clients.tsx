@@ -40,14 +40,31 @@ export default function Clients() {
   }
 
   async function save() {
-    if (!form.name.trim()) { setError('Nome e obrigatorio'); return; }
-    setSaving(true);
-    const payload = { ...form };
-    if (editingId) {
-      await supabase.from('clients').update(payload).eq('id', editingId);
-    } else {
-      await supabase.from('clients').insert(payload);
+    if (!form.name.trim()) {
+      setError('Nome e obrigatorio');
+      return;
     }
+  
+    setSaving(true);
+  
+    const { data: { user } } = await supabase.auth.getUser();
+  
+    const payload = {
+      ...form,
+      user_id: user.id
+    };
+  
+    if (editingId) {
+      await supabase
+        .from('clients')
+        .update(payload)
+        .eq('id', editingId);
+    } else {
+      await supabase
+        .from('clients')
+        .insert(payload);
+    }
+  
     setSaving(false);
     setShowModal(false);
     load();

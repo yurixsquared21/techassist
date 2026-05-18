@@ -72,27 +72,54 @@ export default function ServiceOrders() {
   }
 
   async function save() {
-    if (!form.device_type.trim()) { setError('Tipo de equipamento e obrigatorio'); return; }
-    if (!form.problem_description.trim()) { setError('Descricao do problema e obrigatoria'); return; }
+    if (!form.device_type.trim()) {
+      setError('Tipo de equipamento e obrigatorio');
+      return;
+    }
+  
+    if (!form.problem_description.trim()) {
+      setError('Descricao do problema e obrigatoria');
+      return;
+    }
+  
     setSaving(true);
+  
+    const { data: { user } } = await supabase.auth.getUser();
+  
     const payload: any = {
+      user_id: user.id,
+  
       client_id: form.client_id || null,
-      device_type: form.device_type, device_brand: form.device_brand, device_model: form.device_model,
-      serial_number: form.serial_number, problem_description: form.problem_description,
-      diagnosis: form.diagnosis, solution: form.solution, status: form.status, priority: form.priority,
+      device_type: form.device_type,
+      device_brand: form.device_brand,
+      device_model: form.device_model,
+      serial_number: form.serial_number,
+      problem_description: form.problem_description,
+      diagnosis: form.diagnosis,
+      solution: form.solution,
+      status: form.status,
+      priority: form.priority,
       technician_name: form.technician_name,
       estimated_value: form.estimated_value ? parseFloat(form.estimated_value) : 0,
       final_value: form.final_value ? parseFloat(form.final_value) : 0,
       updated_at: new Date().toISOString(),
     };
+  
     if (form.status === 'completed' || form.status === 'delivered') {
       payload.completed_at = new Date().toISOString();
     }
+  
     if (editingId) {
-      await supabase.from('service_orders').update(payload).eq('id', editingId);
+      await supabase
+        .from('service_orders')
+        .update(payload)
+        .eq('id', editingId);
     } else {
-      await supabase.from('service_orders').insert(payload);
+      await supabase
+        .from('service_orders')
+        .insert(payload);
     }
+  
     setSaving(false);
     setShowModal(false);
     load();

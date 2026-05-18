@@ -55,16 +55,47 @@ export default function CashFlow() {
   }
 
   async function save() {
-    if (!form.description.trim()) { setError('Descricao e obrigatoria'); return; }
-    if (!form.amount || parseFloat(form.amount) <= 0) { setError('Valor deve ser maior que zero'); return; }
-    if (!form.category) { setError('Categoria e obrigatoria'); return; }
-    setSaving(true);
-    const payload = { type: form.type as 'income' | 'expense', category: form.category, description: form.description, amount: parseFloat(form.amount), entry_date: form.entry_date, service_order_id: form.service_order_id || null };
-    if (editingId) {
-      await supabase.from('cash_flow_entries').update(payload).eq('id', editingId);
-    } else {
-      await supabase.from('cash_flow_entries').insert(payload);
+    if (!form.description.trim()) {
+      setError('Descricao e obrigatoria');
+      return;
     }
+  
+    if (!form.amount || parseFloat(form.amount) <= 0) {
+      setError('Valor deve ser maior que zero');
+      return;
+    }
+  
+    if (!form.category) {
+      setError('Categoria e obrigatoria');
+      return;
+    }
+  
+    setSaving(true);
+  
+    const { data: { user } } = await supabase.auth.getUser();
+  
+    const payload = {
+      user_id: user.id,
+  
+      type: form.type as 'income' | 'expense',
+      category: form.category,
+      description: form.description,
+      amount: parseFloat(form.amount),
+      entry_date: form.entry_date,
+      service_order_id: form.service_order_id || null
+    };
+  
+    if (editingId) {
+      await supabase
+        .from('cash_flow_entries')
+        .update(payload)
+        .eq('id', editingId);
+    } else {
+      await supabase
+        .from('cash_flow_entries')
+        .insert(payload);
+    }
+  
     setSaving(false);
     setShowModal(false);
     load();
