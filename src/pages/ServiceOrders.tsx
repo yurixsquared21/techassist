@@ -38,10 +38,23 @@ export default function ServiceOrders() {
 
   async function load() {
     setLoading(true);
+  
+    const { data: { user } } = await supabase.auth.getUser();
+  
     const [ordersRes, clientsRes] = await Promise.all([
-      supabase.from('service_orders').select('*, client:clients(*)').order('order_number', { ascending: false }),
-      supabase.from('clients').select('*').order('name'),
+      supabase
+        .from('service_orders')
+        .select('*, client:clients(*)')
+        .eq('user_id', user.id)
+        .order('order_number', { ascending: false }),
+  
+      supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name'),
     ]);
+  
     setOrders((ordersRes.data ?? []) as any);
     setClients(clientsRes.data ?? []);
     setLoading(false);
